@@ -1,0 +1,5 @@
+system,accuracy,cost,p50_ms,p95_ms,cache_hit_rate
+always_strong,0.988,0.5,650,650,0
+always_weak,0.868,0.05,120,120,0
+router,0.972,0.1868,120,650,0
+router_plus_cache,0.972,0.153,120,650,0.136

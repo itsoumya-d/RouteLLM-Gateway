@@ -1,0 +1,15 @@
+{
+  "name": "@itsoumya-d/route-gateway",
+  "version": "0.1.0",
+  "description": "Calibrated multi-model LLM router with semantic cache and OpenAI/Anthropic-compatible streaming.",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": { ".": "./src/index.js" },
+  "bin": { "route-gateway": "./bin/route-gateway.mjs" },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "evaluate": "node scripts/evaluate.mjs"
+  },
+  "engines": { "node": ">=22" },
+  "license": "MIT"
+}
