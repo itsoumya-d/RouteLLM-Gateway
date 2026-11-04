@@ -48,8 +48,36 @@ node bin/route-gateway.mjs --port 8788
 # GET  /health, /metrics
 ```
 
-Demo providers are deterministic mocks. Real provider adapters can be plugged
-into `providers`; the gateway contract is independent of the vendor.
+`HttpProvider` is a real OpenAI-compatible adapter for OpenAI, xAI Grok, vLLM,
+Ollama, or any endpoint that speaks `POST /chat/completions`. The benchmark
+still uses deterministic mocks; the HTTP adapter is exercised in tests against
+a local fake server.
+
+```js
+import { HttpProvider } from "@itsoumya-d/route-gateway";
+
+const providers = {
+  fast: new HttpProvider({
+    name: "fast",
+    baseUrl: process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1",
+    apiKey: process.env.OPENAI_API_KEY,
+    model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+    costPerRequest: 0.0002,
+  }),
+  frontier: new HttpProvider({
+    name: "frontier",
+    baseUrl: process.env.XAI_BASE_URL ?? "https://api.x.ai/v1",
+    apiKey: process.env.XAI_API_KEY,
+    model: process.env.XAI_MODEL ?? "grok-2-latest",
+    costPerRequest: 0.002,
+  }),
+};
+```
+
+The adapter forwards `model` and a single user message, sends
+`Authorization: Bearer <apiKey>`, parses `choices[0].message.content` and
+`usage`, and surfaces non-2xx bodies with the status code. `costPerRequest` is
+an explicit caller-supplied estimate; the adapter does not invent a price.
 
 ## Measured synthetic benchmark
 
@@ -73,15 +101,19 @@ measurements and must not be presented as such. Pareto data:
 
 ## Tests
 
-`npm test` — 12 tests covering router fitting/calibration, cache paraphrase hits
+`npm test` — 16 tests covering router fitting/calibration, cache paraphrase hits
 and numeric guards, schema validation, routing/caching, schema fallback,
-streaming, HTTP/SSE/Anthropic surfaces, and the Pareto target thresholds.
+streaming, HTTP/SSE/Anthropic surfaces, the Pareto target thresholds, and the
+`HttpProvider` adapter against a local fake `chat/completions` server
+(auth/model forwarding, parsing, non-2xx errors, missing content, gateway
+integration).
 
 ## Limitations
 
-- **No real provider calls.** Anthropic/OpenAI/Gemini keys were not configured;
-  the measured table uses deterministic mock providers with explicit cost and
-  latency assumptions.
+- **No live vendor call was made.** Anthropic/OpenAI/xAI keys were not
+  configured; the measured table uses deterministic mock providers with explicit
+  cost and latency assumptions. The `HttpProvider` path is tested against a local
+  fake HTTP server, not a paid vendor endpoint.
 - **No MMLU-Pro/GSM8K run.** The harness is synthetic math/word problems. Real
   evaluation requires model credentials and the datasets.
 - **Embeddings are hashed bag-of-words**, not edgeinfer/ONNX embeddings. The
